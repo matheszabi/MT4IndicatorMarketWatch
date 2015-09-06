@@ -43,6 +43,8 @@ extern bool DisplayCandleOpen = true; // Display the unclosed candle info
 
 extern bool DisplayCandleClose = true;// Display the last closed candle info
 
+extern int TopMostValues = 5; // After soring values how much need to be shown, the max is 28
+
 int OnInit()
 {
    int length = ArraySize(pairs);
@@ -88,7 +90,8 @@ int OnCalculate(const int rates_total,
    if(DisplaySpreadInfo){
       spreadData.refresh();
       
-      comment += spreadData.getCommentString();      
+      comment += spreadData.getCommentString(TopMostValues);      
+      //comment += spreadData.getTop5CommentString();      
    }
    
    
@@ -96,14 +99,14 @@ int OnCalculate(const int rates_total,
       timeFrameDataOpen.refresh(); 
       
       comment += "\n\n  OPEN candle data (not yet closed)";           
-      comment += timeFrameDataOpen.getCommentString();      
+      comment += timeFrameDataOpen.getCommentString(TopMostValues);
    }
     
    if(DisplayCandleClose){
       timeFrameDataClose.refresh(); 
       
       comment += "\n\n  Last Closed candle data ";       
-      comment += timeFrameDataOpen.getCommentString();
+      comment += timeFrameDataOpen.getCommentString(TopMostValues);  
    }
    
    Comment(comment);
@@ -190,7 +193,7 @@ class SpreadData
       void SpreadData();
       // Functions:
       void refresh();
-      string getCommentString();
+      string getCommentString(int length);
 };
 SpreadData *spreadData;
 
@@ -219,9 +222,11 @@ void SpreadData::refresh(){
   qsortPairValue(inPoints, 0, length-1);
   qsortPairValueAbs(inDepositCurrency, 0, length-1);
 }
-string SpreadData::getCommentString()
+string SpreadData::getCommentString(int length = 28)
 {
-   int i, length = ArraySize(inPoints);
+   int i;
+   length= MathMin(MathMax(TopMostValues, 1), ArraySize(inPoints));
+   
    string comment = "\n  Currency Pairs spread sorted by deposit currency ("+depositCurrencyName+") 1 lot value: -if you open 1 lot size this will be the starting negative amount\n";
    for( i=0; i< length; i++) // descending order: for( i=length-1; i>=0; i--)   
       comment += " "+spreadData.inDepositCurrency[i].pair +"-"+DoubleToStr(spreadData.inDepositCurrency[i].value,2)+" ";
@@ -233,6 +238,8 @@ string SpreadData::getCommentString()
       
    return comment;   
 }
+
+
 
 
 
@@ -249,9 +256,9 @@ class TimeFrameData
       void TimeFrameData(int candleIndex); 
       // Functions:     
       void refresh();
-      string getCommentString();
-      
+      string getCommentString(int length);      
 };
+
 TimeFrameData::TimeFrameData(int candleIndex)
 {  
     this.mCandleIndex = candleIndex;
@@ -299,9 +306,10 @@ void TimeFrameData::refresh()
   qsortPairValueAbs(movementPoint, 0, length-1);
   qsortPairValueAbs(trendingPercentage, 0, length-1);
 }
-string TimeFrameData::getCommentString()
+string TimeFrameData::getCommentString(int length=28)
 {
-   int i, length = ArraySize(volatilityPercentage);
+   int i;
+   length= MathMin(MathMax(TopMostValues, 1), ArraySize(volatilityPercentage));
    string comment = "\n  Volatility in percentage: 100 * (High-Low) / Low  \n";
    for( i=length-1; i>=0; i--)//descending order display   
       comment += " "+volatilityPercentage[i].pair +" "+DoubleToStr(volatilityPercentage[i].value,2)+" ";
@@ -320,6 +328,7 @@ string TimeFrameData::getCommentString()
       
    return comment;   
 }
+
 
 TimeFrameData *timeFrameDataOpen;
 TimeFrameData *timeFrameDataClose;
