@@ -82,6 +82,27 @@ int OnInit()
    
    return(INIT_SUCCEEDED);
 }
+void OnDeinit(const int reason)
+{
+   if(spreadData != NULL)
+   {
+      delete(spreadData);
+   }
+   if(timeFrameDataOpen != NULL)
+   {
+      delete(timeFrameDataOpen);
+   }
+   if(timeFrameDataClose != NULL)
+   {
+      delete(timeFrameDataClose);
+   }
+   if(timeFrameDataAvgClose != NULL)
+   {
+      delete(timeFrameDataAvgClose);
+   }
+   ArrayFree(pairsWithSufix);
+   ArrayFree(marketInfoPoints);   
+}
 
 
 int OnCalculate(const int rates_total,
@@ -221,13 +242,15 @@ class SpreadData
       PairValue inDepositCurrency[];
       // Constructors:      
       void SpreadData();
+      // Destructor:          
+      void ~SpreadData();
       // Functions:
       void refresh();
       string getCommentString(int length);
 };
 SpreadData *spreadData;
 
-SpreadData::SpreadData( )
+SpreadData::SpreadData()
 {   
     int length = ArraySize(pairsWithSufix);
     ArrayResize(inPoints,length);  
@@ -238,6 +261,12 @@ SpreadData::SpreadData( )
       inDepositCurrency[i].pair = pairsWithSufix[i];
     }
 }
+SpreadData::~SpreadData()
+{
+   ArrayFree(inPoints);
+   ArrayFree(inDepositCurrency);
+}
+
 void SpreadData::refresh(){   
    int length = ArraySize(inPoints);
    int i;
@@ -295,6 +324,8 @@ class TimeFrameData
       PairValue trendingPercentage[];
       // Constructors:      
       void TimeFrameData(int candleIndex, int avgCount); 
+      // Destructor:
+      void ~TimeFrameData();
       // Functions:     
       void refresh();
       string getCommentString(int length);      
@@ -311,6 +342,13 @@ TimeFrameData::TimeFrameData(int candleIndex, int avgCount = 1)
     ArrayResize(volatilityPoint,length);    
     ArrayResize(movementPoint,length);     
     ArrayResize(trendingPercentage,length);   
+}
+void TimeFrameData::~TimeFrameData()
+{
+    ArrayFree(volatilityPercentage);
+    ArrayFree(volatilityPoint);
+    ArrayFree(movementPoint);
+    ArrayFree(trendingPercentage);
 }
 void TimeFrameData::refreshLast()  
 {
