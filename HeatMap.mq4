@@ -270,13 +270,15 @@ string SpreadData::getCommentString(int length = 28)
    {
       comment += " "+spreadData.inPoints[i].pair +"-"+DoubleToStr(spreadData.inPoints[i].value,0)+" ";
    }
-      
-      
+           
    return comment;   
 }
 
-
-
+// ##################################################
+//
+// ###############  TimeFrameData ###################
+//
+// ##################################################
 
 
 class TimeFrameData
@@ -316,7 +318,7 @@ void TimeFrameData::refreshLast()
    int length = ArraySize(volatilityPercentage);
    string currencyPair = "";
    double curLow, curHigh, curClose, curOpen;
-   Print("refreshLast() mCandleIndex:",mCandleIndex );
+   
    for(int i=0; i < length; i++)
    {
       // cache for faster access:
