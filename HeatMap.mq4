@@ -23,7 +23,7 @@ extern string CurrencyPairSufix = ".lmx";//Like .lmx if you use LMAX as broker;
 // NZD pairs: AUDNZD, NZDCAD, NZDCHF, EURNZD, GBPNZD, NZDJPY, NZDUSD
 // USD pairs: AUDUSD, USDCAD, USDCHF, EURUSD, GBPUSD, USDJPY, NZDUSD  
 
-static string pairs[] = {"AUDCAD", "AUDCHF", "EURAUD", "GBPAUD", "AUDJPY", "AUDNZD", "AUDNZD",
+static string pairs[] = {"AUDCAD", "AUDCHF", "EURAUD", "GBPAUD", "AUDJPY", "AUDNZD", "AUDUSD",
                                    "CADCHF", "EURCAD", "GBPCAD", "CADJPY", "NZDCAD", "USDCAD",
                                              "EURCHF", "GBPCHF", "CHFJPY", "NZDCHF", "USDCHF",
                                                        "EURGBP", "EURJPY", "EURNZD", "EURUSD",
