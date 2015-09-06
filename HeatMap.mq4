@@ -285,8 +285,10 @@ void TimeFrameData::refresh()
       if( curLow != 0){// not all candles data received, so it can be 0 at this point!
          volatilityPercentage[i].value = 100 * ( curHigh - curLow ) / curLow;
       }      
-      volatilityPoint[i].value = ( curHigh - curLow ) / marketInfoPoints[i] ;
-      movementPoint[i].value = (curClose - curOpen) / marketInfoPoints[i] ;
+      if(marketInfoPoints[i]){
+         volatilityPoint[i].value = ( curHigh - curLow ) / marketInfoPoints[i] ;
+         movementPoint[i].value = (curClose - curOpen) / marketInfoPoints[i] ;
+      }
       if( (curHigh - curLow ) != 0){// not all candles data received, so it can be 0 at this point!
          trendingPercentage[i].value =  100*MathAbs(curClose - curOpen)/( curHigh - curLow );     
       }
