@@ -52,9 +52,8 @@ int OnInit()
    for(int i=0; i< length; i++){
       pairsWithSufix[i] = pairs[i] + CurrencyPairSufix;
       marketInfoPoints[i] = MarketInfo(pairsWithSufix[i],MODE_POINT);
-   }   
-   
-   //ArrayResize(tmpDataBuff,length);     
+   }      
+       
    if(DisplaySpreadInfo){
       spreadData = new SpreadData();
    }
@@ -288,7 +287,7 @@ void TimeFrameData::refresh()
       }      
       volatilityPoint[i].value = ( curHigh - curLow ) / marketInfoPoints[i] ;
       movementPoint[i].value = (curClose - curOpen) / marketInfoPoints[i] ;
-      if( (curHigh - curLow ) != 0){
+      if( (curHigh - curLow ) != 0){// not all candles data received, so it can be 0 at this point!
          trendingPercentage[i].value =  100*MathAbs(curClose - curOpen)/( curHigh - curLow );     
       }
    }
@@ -296,6 +295,7 @@ void TimeFrameData::refresh()
   qsortPairValue(volatilityPercentage, 0, length-1);
   qsortPairValue(volatilityPoint, 0, length-1);
   qsortPairValueAbs(movementPoint, 0, length-1);
+  qsortPairValueAbs(trendingPercentage, 0, length-1);
 }
 string TimeFrameData::getCommentString()
 {
