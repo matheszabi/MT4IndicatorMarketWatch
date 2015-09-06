@@ -43,6 +43,10 @@ extern bool DisplayCandleOpen = true; // Display the unclosed candle info
 
 extern bool DisplayCandleClose = true;// Display the last closed candle info
 
+extern bool DisplayAvgCandleClose = true;// Display average close candle info
+
+extern int AverageCount = 10; // Average of closed candle count
+
 extern int TopMostValues = 5; // After soring values how much need to be shown, the max is 28
 
 int OnInit()
@@ -51,20 +55,29 @@ int OnInit()
    
    ArrayResize(pairsWithSufix,length);
    ArrayResize(marketInfoPoints,length);
-   for(int i=0; i< length; i++){
+   for(int i=0; i< length; i++)
+   {
       pairsWithSufix[i] = pairs[i] + CurrencyPairSufix;
       marketInfoPoints[i] = MarketInfo(pairsWithSufix[i],MODE_POINT);
    }      
        
-   if(DisplaySpreadInfo){
+   if(DisplaySpreadInfo)
+   {
       spreadData = new SpreadData();
    }
-   if(DisplayCandleOpen){
+   if(DisplayCandleOpen)
+   {
       timeFrameDataOpen = new TimeFrameData(0);
    }
    
-   if(DisplayCandleClose){
+   if(DisplayCandleClose)
+   {
       timeFrameDataClose = new TimeFrameData(1);
+   }
+   
+   if(DisplayAvgCandleClose)
+   {
+      timeFrameDataAvgClose = new TimeFrameData(1, AverageCount);
    }
    
    return(INIT_SUCCEEDED);
@@ -84,29 +97,38 @@ int OnCalculate(const int rates_total,
   {  
 
    string comment = "";
-   int length = ArraySize(pairs);
-     
+   int length = ArraySize(pairs);     
    
-   if(DisplaySpreadInfo){
+   if(DisplaySpreadInfo)
+   {
       spreadData.refresh();
       
-      comment += spreadData.getCommentString(TopMostValues);      
-      //comment += spreadData.getTop5CommentString();      
-   }
+      comment += "  Spread info";  
+      comment += spreadData.getCommentString(TopMostValues);   
+   }   
    
-   
-   if(DisplayCandleOpen){
+   if(DisplayCandleOpen)
+   {
       timeFrameDataOpen.refresh(); 
       
       comment += "\n\n  OPEN candle data (not yet closed)";           
       comment += timeFrameDataOpen.getCommentString(TopMostValues);
    }
     
-   if(DisplayCandleClose){
+   if(DisplayCandleClose)
+   {
       timeFrameDataClose.refresh(); 
       
       comment += "\n\n  Last Closed candle data ";       
-      comment += timeFrameDataOpen.getCommentString(TopMostValues);  
+      comment += timeFrameDataClose.getCommentString(TopMostValues);  
+   }
+   
+   if(DisplayAvgCandleClose)
+   {
+      timeFrameDataAvgClose.refresh();
+      
+      comment += "\n\n  Avg "+IntegerToString(AverageCount)+" Closed candle data ";       
+      comment += timeFrameDataAvgClose.getCommentString(TopMostValues); 
    }
    
    Comment(comment);
@@ -126,7 +148,8 @@ class PairValue
       double value;
 };
 // sorting helper function 
-void swap(PairValue &pairValues[], int leftIndex, int rightIndex){
+void swap(PairValue &pairValues[], int leftIndex, int rightIndex)
+{
    PairValue swapPairValue;
    
    swapPairValue.pair = pairValues[leftIndex].pair;   
@@ -140,17 +163,21 @@ void swap(PairValue &pairValues[], int leftIndex, int rightIndex){
 }
 
 // a qsort implementation for PairValue
-void qsortPairValue(PairValue &pairValues[], int left, int right){
+void qsortPairValue(PairValue &pairValues[], int left, int right)
+{
    int i, last;
    
-   if (left >= right){
+   if (left >= right)
+   {
         return;
    }
         
    swap(pairValues, left, (left + right)/2); 
    last = left;
-   for (i = left+1; i <= right; i++){
-       if ( pairValues[i].value <  pairValues[left].value) {
+   for (i = left+1; i <= right; i++)
+   {
+       if ( pairValues[i].value <  pairValues[left].value) 
+       {
             swap(pairValues, ++last, i);
        }
    }
@@ -161,7 +188,8 @@ void qsortPairValue(PairValue &pairValues[], int left, int right){
    qsortPairValue(pairValues, last+1, right);                
 }
 
-void qsortPairValueAbs(PairValue &pairValues[], int left, int right){
+void qsortPairValueAbs(PairValue &pairValues[], int left, int right)
+{
    int i, last;
    
    if (left >= right){
@@ -170,8 +198,10 @@ void qsortPairValueAbs(PairValue &pairValues[], int left, int right){
         
    swap(pairValues, left, (left + right)/2); 
    last = left;
-   for (i = left+1; i <= right; i++){
-       if ( MathAbs(pairValues[i].value) <  MathAbs(pairValues[left].value)) {
+   for (i = left+1; i <= right; i++)
+   {
+       if ( MathAbs(pairValues[i].value) <  MathAbs(pairValues[left].value)) 
+       {
             swap(pairValues, ++last, i);
        }
    }
@@ -202,7 +232,8 @@ SpreadData::SpreadData( )
     int length = ArraySize(pairsWithSufix);
     ArrayResize(inPoints,length);  
     ArrayResize(inDepositCurrency,length);   
-    for(int i=0; i<length;i++){
+    for(int i=0; i<length;i++)
+    {
       inPoints[i].pair = pairsWithSufix[i];
       inDepositCurrency[i].pair = pairsWithSufix[i];
     }
@@ -227,13 +258,18 @@ string SpreadData::getCommentString(int length = 28)
    int i;
    length= MathMin(MathMax(TopMostValues, 1), ArraySize(inPoints));
    
-   string comment = "\n  Currency Pairs spread sorted by deposit currency ("+depositCurrencyName+") 1 lot value: -if you open 1 lot size this will be the starting negative amount\n";
-   for( i=0; i< length; i++) // descending order: for( i=length-1; i>=0; i--)   
+   string comment = "";
+   comment += "\n                 Sorted by deposit currency ("+depositCurrencyName+") 1 lot value: -if you open 1 lot size this will be the starting negative amount\n";
+   for( i=0; i< length; i++)
+   {
       comment += " "+spreadData.inDepositCurrency[i].pair +"-"+DoubleToStr(spreadData.inDepositCurrency[i].value,2)+" ";
+   }
       
-   comment += "\n\n  Currency Pairs spread sorted by Points. Informative to use the Take Profit and Stop Loss\n";
-   for( i=0; i< length; i++) // descending order: for( i=length-1; i>=0; i--)      
+   comment += "\n                 Sorted by Points. Informative to use the Take Profit and Stop Loss\n";
+   for( i=0; i< length; i++)
+   {
       comment += " "+spreadData.inPoints[i].pair +"-"+DoubleToStr(spreadData.inPoints[i].value,0)+" ";
+   }
       
       
    return comment;   
@@ -247,21 +283,25 @@ class TimeFrameData
 {      
    private:
       int mCandleIndex;
+      int mAvgCount;
+      void refreshLast();
+      void refreshAvg();
    public:
       PairValue volatilityPercentage[];
       PairValue volatilityPoint[];
       PairValue movementPoint[];      
       PairValue trendingPercentage[];
       // Constructors:      
-      void TimeFrameData(int candleIndex); 
+      void TimeFrameData(int candleIndex, int avgCount); 
       // Functions:     
       void refresh();
       string getCommentString(int length);      
 };
 
-TimeFrameData::TimeFrameData(int candleIndex)
+TimeFrameData::TimeFrameData(int candleIndex, int avgCount = 1)
 {  
     this.mCandleIndex = candleIndex;
+    this.mAvgCount = avgCount;
     
     int length = ArraySize(pairsWithSufix);
     
@@ -270,13 +310,15 @@ TimeFrameData::TimeFrameData(int candleIndex)
     ArrayResize(movementPoint,length);     
     ArrayResize(trendingPercentage,length);   
 }
-void TimeFrameData::refresh()   
-{   
+void TimeFrameData::refreshLast()  
+{
    // get the data from market
    int length = ArraySize(volatilityPercentage);
    string currencyPair = "";
    double curLow, curHigh, curClose, curOpen;
-   for(int i=0; i < length; i++){
+   Print("refreshLast() mCandleIndex:",mCandleIndex );
+   for(int i=0; i < length; i++)
+   {
       // cache for faster access:
       currencyPair = pairsWithSufix[i];
       curHigh = iHigh(currencyPair, PERIOD_CURRENT, mCandleIndex);
@@ -289,42 +331,111 @@ void TimeFrameData::refresh()
       movementPoint[i].pair = currencyPair;
       trendingPercentage[i].pair = currencyPair;
       // values
-      if( curLow != 0){// not all candles data received, so it can be 0 at this point!
+      if( curLow != 0)
+      {// not all candles data received, so it can be 0 at this point!
          volatilityPercentage[i].value = 100 * ( curHigh - curLow ) / curLow;
       }      
-      if(marketInfoPoints[i]){
+      if(marketInfoPoints[i])
+      {
          volatilityPoint[i].value = ( curHigh - curLow ) / marketInfoPoints[i] ;
          movementPoint[i].value = (curClose - curOpen) / marketInfoPoints[i] ;
       }
-      if( (curHigh - curLow ) != 0){// not all candles data received, so it can be 0 at this point!
+      if( (curHigh - curLow ) != 0)
+      {// not all candles data received, so it can be 0 at this point!
          trendingPercentage[i].value =  100*MathAbs(curClose - curOpen)/( curHigh - curLow );     
       }
    }
-   // sort it:
-  qsortPairValue(volatilityPercentage, 0, length-1);
-  qsortPairValue(volatilityPoint, 0, length-1);
-  qsortPairValueAbs(movementPoint, 0, length-1);
-  qsortPairValueAbs(trendingPercentage, 0, length-1);
+}
+void TimeFrameData::refreshAvg()  
+{   
+   // get the data from market
+   int length = ArraySize(volatilityPercentage);   
+   
+   double volatilityPercentageValueTmp[];   
+   double volatilityPointValueTmp[];
+   double movementPointValueTmp[];
+   double trendingPercentageValueTmp[];
+   ArrayResize(volatilityPercentageValueTmp, length);
+   ArrayResize(volatilityPointValueTmp, length);
+   ArrayResize(movementPointValueTmp, length);
+   ArrayResize(trendingPercentageValueTmp, length);
+   
+   for(int j=0; j<mAvgCount; j++)
+   {
+      // move to next candle
+      mCandleIndex = 1+j;
+      // get that candle data, it will override the member data
+      refreshLast();// not sorted
+      // add to tmp:
+      for(int i=0; i < length; i++)
+      {
+         volatilityPercentageValueTmp[i] += volatilityPercentage[i].value;         
+         volatilityPointValueTmp[i] += volatilityPoint[i].value;
+         movementPointValueTmp[i] += movementPoint[i].value;
+         trendingPercentageValueTmp[i] += trendingPercentage[i].value;
+      }
+   }
+   // persist value to member:
+   for(int i=0; i < length; i++)
+   {
+      volatilityPercentage[i].value = volatilityPercentageValueTmp[i] / mAvgCount;
+      volatilityPoint[i].value = volatilityPointValueTmp[i] / mAvgCount;
+      movementPoint[i].value = movementPointValueTmp[i] / mAvgCount;
+      trendingPercentage[i].value = trendingPercentageValueTmp[i] / mAvgCount;
+   }
+}
+
+void TimeFrameData::refresh()   
+{   
+   int length = ArraySize(volatilityPercentage);
+   
+   if(mAvgCount > 1)
+   {
+      refreshAvg();
+   }
+   else
+   {
+      refreshLast();
+   }
+   
+   qsortPairValue(volatilityPercentage, 0, length-1);
+   qsortPairValue(volatilityPoint, 0, length-1);
+   qsortPairValueAbs(movementPoint, 0, length-1);
+   qsortPairValueAbs(trendingPercentage, 0, length-1);
 }
 string TimeFrameData::getCommentString(int length=28)
 {
    int i;
    length= MathMin(MathMax(TopMostValues, 1), ArraySize(volatilityPercentage));
-   string comment = "\n  Volatility in percentage: 100 * (High-Low) / Low  \n";
-   for( i=length-1; i>=0; i--)//descending order display   
-      comment += " "+volatilityPercentage[i].pair +" "+DoubleToStr(volatilityPercentage[i].value,2)+" ";
+   string comment = "";
    
-   comment += "\n  Volatility in Points: 100 * (High-Low) to Points\n";   
-   for( i=length-1; i>=0; i--)//descending order display      
+   comment += "\n                 Volatility in percentage: 100 * (High-Low) / Low  \n";
+   
+   for( i=length-1; i>=0; i--)//descending order display   
+   {
+      comment += " "+volatilityPercentage[i].pair +" "+DoubleToStr(volatilityPercentage[i].value,2)+" ";
+   }
+   
+   comment += "\n                  Volatility in Points: 100 * (High-Low) to Points\n";   
+   
+   for( i=length-1; i>=0; i--)//descending order display   
+   {   
       comment += " "+volatilityPoint[i].pair +" "+DoubleToStr(volatilityPoint[i].value,0)+" ";
+   }
       
-   comment += "\n  Movement in Points: 100 * (Close-Open) to Points\n"; 
+   comment += "\n                  Movement in Points: 100 * (Close-Open) to Points\n"; 
+   
    for( i=length-1; i>=0; i--)//descending order display      
+   {
       comment += " "+movementPoint[i].pair +" "+DoubleToStr(movementPoint[i].value,0)+" ";
+   }
       
-   comment += "\n  Trending in percentage: movement/volatility : 100 * Abs(Close-Open) / (High-Low) \n"; 
+   comment += "\n                  Trending in percentage: movement/volatility : 100 * Abs(Close-Open) / (High-Low) \n"; 
+   
    for( i=length-1; i>=0; i--)//descending order display      
+   {
       comment += " "+trendingPercentage[i].pair +" "+DoubleToStr(trendingPercentage[i].value,2)+" ";
+   }
       
    return comment;   
 }
@@ -332,7 +443,7 @@ string TimeFrameData::getCommentString(int length=28)
 
 TimeFrameData *timeFrameDataOpen;
 TimeFrameData *timeFrameDataClose;
-
+TimeFrameData *timeFrameDataAvgClose;
 
 
 
